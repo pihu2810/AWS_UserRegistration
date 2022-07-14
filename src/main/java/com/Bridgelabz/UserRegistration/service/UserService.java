@@ -33,17 +33,20 @@ public class UserService implements IUserService
 
     @Autowired
     TokenUtility util;
-
     @Override
     public String addUser(UserDTO userDTO) {
-        User newUser= new User(userDTO);
-        userRepository.save(newUser);
+        User newUser = new User(userDTO);
+        Optional<User> userEmail= userRepository.findByEmailId(userDTO.getEmail());
+        if(userEmail.isPresent()){
+            throw new UserException(HttpStatus.BAD_REQUEST,"Email already exists, Please enter other email!!") ;
+        }else
+            userRepository.save(newUser);
         String token = util.createToken(newUser.getUserId());
-        mailService.sendEmail(newUser.getEmail(), "Test Email", "Registered SuccessFully, hii: "
-                +newUser.getFirstName()+"Please Click here to get data-> "
-                +"http://localhost:8009/user/getBy/"+token);
+        mailService.sendEmail(newUser.getEmail(), "User Registration", " Hi " + newUser.getFirstName() +
+                " Your User Registered SuccessFully Completed. Please Click here to get data-> " + "http://localhost:8009/user/verify/" + token);
         return token;
     }
+
 
     @Override
     public List<User> getAllUsers() {
@@ -129,22 +132,6 @@ public class UserService implements IUserService
         return token.append(UUID.randomUUID().toString())
                 .append(UUID.randomUUID().toString()).toString();
     }
-
-//    @Override
-//    public String forgotPassword(String email, String password) {
-//        Optional<User> isUserPresent = userRepository.findByEmailId(email);
-//
-//        if(!isUserPresent.isPresent()) {
-//            throw new UserException("Book record does not found");
-//        }
-//        else {
-//            User user = isUserPresent.get();
-//            user.setPassword(password);
-//            userRepository.save(user);
-//            return "Password updated successfully";
-//        }
-//
-//    }
 
     @Override
     public Object getUserByEmailId(String email) {
